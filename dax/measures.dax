@@ -1,0 +1,638 @@
+// =====================================================================
+// Solar Energy Analytics: DAX measure library
+// ---------------------------------------------------------------------
+// Model tables (see powerbi/01_data_model.md):
+//   'Date'            daily calendar, marked as date table, FY ends 31 March
+//   Project           vw_dim_project + project diagnostics + segments (1 row/project)
+//   Energy            fact_energy_generation    (project x month)
+//   Financials        fact_financials           (project x month)
+//   Sustainability    fact_sustainability       (project x month)
+//   'Month Diagnostics' ana_month_diagnostics   (project x month)
+//   'Top N', 'W ROI' ... what-if parameter tables (disconnected)
+//
+// Conventions
+//   * Put all measures in a dedicated empty table "_Measures"; display folders below.
+//   * Ratios are ratios of sums (never AVERAGE of a ratio column).
+//   * Money is stored in INR; "(₹ Cr)" measures divide by 1e7 for display.
+//   * Expected values for every measure: powerbi/05_dax_expected_values.md
+// =====================================================================
+
+
+// ---------------------------------------------------------------------
+// Display folder: 1 Energy
+// ---------------------------------------------------------------------
+
+Total Energy (MWh) =
+SUM ( Energy[energy_generated_mwh] )
+// format: #,0
+
+Energy (GWh) =
+DIVIDE ( [Total Energy (MWh)], 1000 )
+// format: #,0.0
+
+Project Months =
+COUNTROWS ( Energy )
+
+Avg Energy per Project-Month (MWh) =
+DIVIDE ( [Total Energy (MWh)], [Project Months] )
+
+// Each Energy row is one project-month, so summing capacity over rows = MW-months.
+MW-Months =
+SUMX ( Energy, RELATED ( Project[capacity_mw] ) )
+
+Theoretical Max Energy (MWh) =
+SUMX ( Energy, RELATED ( Project[capacity_mw] ) * Energy[hours_in_month] )
+
+// Capacity factor (India: CUF). Capacity-weighted by construction.
+Capacity Factor =
+DIVIDE ( [Total Energy (MWh)], [Theoretical Max Energy (MWh)] )
+// format: 0.0%
+
+// Weather-normalised performance ratio (IEC 61724 style, on GHI).
+// Months without an irradiation reading are excluded from BOTH sides.
+Performance Ratio =
+VAR WithWeather =
+    FILTER ( Energy, NOT ISBLANK ( Energy[irradiation_kwh_m2] ) )
+RETURN
+    DIVIDE (
+        SUMX ( WithWeather, Energy[energy_generated_mwh] ),
+        SUMX ( WithWeather, RELATED ( Project[capacity_mw] ) * Energy[irradiation_kwh_m2] )
+    )
+// format: 0.0%
+
+// Share of daylight hours (12 h/day = hours_in_month / 2) the plant was able to run.
+Availability =
+VAR WithDowntime =
+    FILTER ( Energy, NOT ISBLANK ( Energy[downtime_hours] ) )
+RETURN
+    IF (
+        COUNTROWS ( WithDowntime ) > 0,
+        1 - DIVIDE (
+                SUMX ( WithDowntime, Energy[downtime_hours] ),
+                SUMX ( WithDowntime, Energy[hours_in_month] / 2 )
+            )
+    )
+// format: 0.0%
+
+Installed Capacity (MW) =
+SUM ( Project[capacity_mw] )
+
+// Capacity in commercial operation at the end of the selected period.
+// Project is not related to 'Date', so the date is read explicitly.
+Operating Capacity (MW) =
+VAR AsOf = MAX ( 'Date'[Date] )
+RETURN
+    CALCULATE (
+        SUM ( Project[capacity_mw] ),
+        Project[project_status] = "Operational",
+        Project[installation_date] <= AsOf
+    )
+
+Pipeline Capacity (MW) =
+CALCULATE ( SUM ( Project[capacity_mw] ), Project[project_status] = "Under Construction" )
+
+
+// ---------------------------------------------------------------------
+// Display folder: 2 Time Intelligence
+// ---------------------------------------------------------------------
+
+Energy PY =
+CALCULATE ( [Total Energy (MWh)], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+
+// Blank (not -100% or +inf) when there is no prior-year data.
+Energy YoY % =
+VAR PY = [Energy PY]
+RETURN
+    IF ( NOT ISBLANK ( PY ), DIVIDE ( [Total Energy (MWh)] - PY, PY ) )
+// format: +0.0%;-0.0%;0.0%
+
+Generation Growth % =
+[Energy YoY %]
+
+Energy Variance vs PY (MWh) =
+VAR PY = [Energy PY]
+RETURN
+    IF ( NOT ISBLANK ( PY ), [Total Energy (MWh)] - PY )
+
+Energy PM =
+CALCULATE ( [Total Energy (MWh)], DATEADD ( 'Date'[Date], -1, MONTH ) )
+
+Energy MoM % =
+VAR PM = [Energy PM]
+RETURN
+    IF ( NOT ISBLANK ( PM ), DIVIDE ( [Total Energy (MWh)] - PM, PM ) )
+
+// Indian fiscal year: year-end date "3/31".
+Energy FYTD (MWh) =
+TOTALYTD ( [Total Energy (MWh)], 'Date'[Date], "3/31" )
+
+Revenue FYTD =
+TOTALYTD ( [Revenue], 'Date'[Date], "3/31" )
+
+// Rolling windows end at the last month WITH DATA in context, so the
+// grand total shows the latest 3/12 months, not an empty future window.
+Energy Rolling 3M (MWh) =
+VAR LastDataDate =
+    EOMONTH ( MAX ( Energy[month_start_date] ), 0 )
+RETURN
+    CALCULATE (
+        [Total Energy (MWh)],
+        DATESINPERIOD ( 'Date'[Date], LastDataDate, -3, MONTH )
+    )
+
+Energy Rolling 12M (MWh) =
+VAR LastDataDate =
+    EOMONTH ( MAX ( Energy[month_start_date] ), 0 )
+RETURN
+    CALCULATE (
+        [Total Energy (MWh)],
+        DATESINPERIOD ( 'Date'[Date], LastDataDate, -12, MONTH )
+    )
+
+Revenue Rolling 12M =
+VAR LastDataDate =
+    EOMONTH ( MAX ( Financials[month_start_date] ), 0 )
+RETURN
+    CALCULATE ( [Revenue], DATESINPERIOD ( 'Date'[Date], LastDataDate, -12, MONTH ) )
+
+Revenue PY =
+CALCULATE ( [Revenue], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+
+Revenue YoY % =
+VAR PY = [Revenue PY]
+RETURN
+    IF ( NOT ISBLANK ( PY ), DIVIDE ( [Revenue] - PY, PY ) )
+
+// Like-for-like: only projects that report EVERY month of BOTH the current
+// and the prior period. Separates real performance change from new capacity.
+// Use with a fiscal year (or month) on rows.
+LFL Energy YoY % =
+VAR MonthsInPeriod =
+    COUNTROWS ( VALUES ( 'Date'[MonthStart] ) )
+VAR LflProjects =
+    FILTER (
+        VALUES ( Project[project_id] ),
+        CALCULATE ( COUNTROWS ( Energy ) ) = MonthsInPeriod
+            && CALCULATE ( COUNTROWS ( Energy ), SAMEPERIODLASTYEAR ( 'Date'[Date] ) ) = MonthsInPeriod
+    )
+VAR Cur = CALCULATE ( [Total Energy (MWh)], LflProjects )
+VAR Prev = CALCULATE ( [Total Energy (MWh)], LflProjects, SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+RETURN
+    IF ( COUNTROWS ( LflProjects ) > 0, DIVIDE ( Cur - Prev, Prev ) )
+
+LFL Project Count =
+VAR MonthsInPeriod =
+    COUNTROWS ( VALUES ( 'Date'[MonthStart] ) )
+RETURN
+    COUNTROWS (
+        FILTER (
+            VALUES ( Project[project_id] ),
+            CALCULATE ( COUNTROWS ( Energy ) ) = MonthsInPeriod
+                && CALCULATE ( COUNTROWS ( Energy ), SAMEPERIODLASTYEAR ( 'Date'[Date] ) ) = MonthsInPeriod
+        )
+    )
+
+
+// ---------------------------------------------------------------------
+// Display folder: 3 Financial
+// ---------------------------------------------------------------------
+
+Revenue =
+SUM ( Financials[revenue_inr] )
+
+Revenue (₹ Cr) =
+DIVIDE ( [Revenue], 1e7 )
+
+Operating Cost =
+SUM ( Financials[operating_cost_inr] )
+
+Maintenance Cost =
+SUM ( Financials[maintenance_cost_inr] )
+
+Depreciation =
+SUM ( Financials[depreciation_inr] )
+
+EBITDA =
+SUM ( Financials[ebitda_inr] )
+
+// "Profit" in this project = EBIT: after depreciation, before interest and tax.
+EBIT =
+SUM ( Financials[profit_inr] )
+
+EBIT (₹ Cr) =
+DIVIDE ( [EBIT], 1e7 )
+
+// Capex is a project attribute, never stored on monthly rows.
+Total Investment =
+SUM ( Project[investment_amount_inr] )
+
+Total Investment (₹ Cr) =
+DIVIDE ( [Total Investment], 1e7 )
+
+Operational Investment (₹ Cr) =
+DIVIDE ( CALCULATE ( [Total Investment], Project[project_status] = "Operational" ), 1e7 )
+
+// Capital-years employed: each Financials row = one month of that project's capex at work.
+Capital Employed =
+DIVIDE ( SUMX ( Financials, RELATED ( Project[investment_amount_inr] ) ), 12 )
+
+// Annualised, time-weighted ROI on an EBIT basis.
+ROI % =
+DIVIDE ( [EBIT], [Capital Employed] )
+// format: 0.00%
+
+EBITDA Yield % =
+DIVIDE ( [EBITDA], [Capital Employed] )
+
+Profit Margin % =
+DIVIDE ( [EBIT], [Revenue] )
+
+EBITDA Margin % =
+DIVIDE ( [EBITDA], [Revenue] )
+
+MW-Months (Financials) =
+SUMX ( Financials, RELATED ( Project[capacity_mw] ) )
+
+Revenue per MW (₹ lakh/yr) =
+DIVIDE ( [Revenue], [MW-Months (Financials)] ) * 12 / 1e5
+
+Profit per MW (₹ lakh/yr) =
+DIVIDE ( [EBIT], [MW-Months (Financials)] ) * 12 / 1e5
+
+// Investment efficiency = annual revenue generated per rupee of capital.
+Investment Efficiency % =
+DIVIDE ( [Revenue], [Capital Employed] )
+
+MWh per ₹ Cr per Year =
+DIVIDE ( [Total Energy (MWh)], [Capital Employed] / 1e7 )
+
+// capital-years / EBITDA over the same months = capex / annual EBITDA
+Payback (Years) =
+DIVIDE ( [Capital Employed], [EBITDA] )
+
+Realised Tariff (₹/kWh) =
+DIVIDE ( [Revenue], [Total Energy (MWh)] * 1000 )
+
+
+// ---------------------------------------------------------------------
+// Display folder: 4 Sustainability
+// ---------------------------------------------------------------------
+
+CO2 Avoided (t) =
+SUM ( Sustainability[co2_avoided_tonnes] )
+
+CO2 Avoided (Mt) =
+DIVIDE ( [CO2 Avoided (t)], 1e6 )
+
+CO2 per MW-Year (t) =
+DIVIDE ( [CO2 Avoided (t)], [MW-Months] ) * 12
+
+CO2 per ₹ Cr-Year (t) =
+DIVIDE ( [CO2 Avoided (t)], [Capital Employed] / 1e7 )
+
+// Non-additive over time: households are the AVERAGE monthly equivalent.
+Equivalent Households =
+AVERAGEX (
+    VALUES ( 'Date'[MonthStart] ),
+    CALCULATE ( SUM ( Sustainability[equivalent_households] ) )
+)
+
+// Captive (C&I, Rooftop) projects only: solar used on site / site demand.
+Renewable Share (Captive) % =
+VAR Captive =
+    FILTER ( Sustainability, NOT ISBLANK ( Sustainability[renewable_energy_pct] ) )
+RETURN
+    DIVIDE (
+        SUMX ( Captive, Sustainability[renewable_energy_pct] / 100 * Sustainability[site_consumption_mwh] ),
+        SUMX ( Captive, Sustainability[site_consumption_mwh] )
+    )
+
+
+// ---------------------------------------------------------------------
+// Display folder: 5 Ranking
+// ---------------------------------------------------------------------
+
+Region Rank (ROI) =
+IF (
+    HASONEVALUE ( Project[region] ),
+    RANKX ( ALLSELECTED ( Project[region] ), [ROI %], , DESC, DENSE )
+)
+
+Region Rank (Energy) =
+IF (
+    HASONEVALUE ( Project[region] ),
+    RANKX ( ALLSELECTED ( Project[region] ), [Total Energy (MWh)], , DESC, DENSE )
+)
+
+// Pipeline projects have no ROI yet and are left out of the ranking.
+Project Rank (ROI) =
+IF (
+    HASONEVALUE ( Project[project_code] ) && NOT ISBLANK ( [ROI %] ),
+    RANKX (
+        FILTER ( ALLSELECTED ( Project[project_code] ), NOT ISBLANK ( [ROI %] ) ),
+        [ROI %], , DESC, DENSE
+    )
+)
+
+Top Project (ROI) =
+VAR Scored =
+    FILTER (
+        ADDCOLUMNS ( VALUES ( Project[project_name] ), "@roi", [ROI %] ),
+        NOT ISBLANK ( [@roi] )
+    )
+RETURN
+    CONCATENATEX (
+        TOPN ( 1, Scored, [@roi], DESC ),
+        Project[project_name] & " (" & FORMAT ( [@roi], "0.00%" ) & ")",
+        ", "
+    )
+
+Bottom Project (ROI) =
+VAR Scored =
+    FILTER (
+        ADDCOLUMNS ( VALUES ( Project[project_name] ), "@roi", [ROI %] ),
+        NOT ISBLANK ( [@roi] )
+    )
+RETURN
+    CONCATENATEX (
+        TOPN ( 1, Scored, [@roi], ASC ),
+        Project[project_name] & " (" & FORMAT ( [@roi], "0.00%" ) & ")",
+        ", "
+    )
+
+// What-if parameter: Modeling > New parameter > "Top N", 5..20 step 5, default 10
+Top N Value =
+SELECTEDVALUE ( 'Top N'[Top N], 10 )
+
+// Visual-level filter: "Is In Top N (ROI)" is 1
+Is In Top N (ROI) =
+IF ( [Project Rank (ROI)] <= [Top N Value], 1, 0 )
+
+Contribution % (Energy) =
+DIVIDE ( [Total Energy (MWh)], CALCULATE ( [Total Energy (MWh)], ALLSELECTED ( Project ) ) )
+
+Contribution % (Revenue) =
+DIVIDE ( [Revenue], CALCULATE ( [Revenue], ALLSELECTED ( Project ) ) )
+
+
+// ---------------------------------------------------------------------
+// Display folder: 6 Diagnostics (from ana_* tables, Stage 3)
+// ---------------------------------------------------------------------
+
+Expected Energy (MWh) =
+SUM ( 'Month Diagnostics'[expected_mwh] )
+
+Potential Energy (MWh) =
+SUM ( 'Month Diagnostics'[potential_mwh] )
+
+// Months without weather (no model estimate) are excluded from both sides.
+Actual vs Potential % =
+VAR Modelled =
+    FILTER ( 'Month Diagnostics', NOT ISBLANK ( 'Month Diagnostics'[potential_mwh] ) )
+RETURN
+    DIVIDE (
+        SUMX ( Modelled, 'Month Diagnostics'[energy_generated_mwh] ),
+        SUMX ( Modelled, 'Month Diagnostics'[potential_mwh] )
+    ) - 1
+
+Downtime Loss (₹ Cr) =
+DIVIDE ( SUM ( 'Month Diagnostics'[downtime_loss_inr] ), 1e7 )
+
+Unexplained Loss (₹ Cr) =
+DIVIDE ( SUM ( 'Month Diagnostics'[unexplained_loss_inr] ), 1e7 )
+
+Avoidable Loss (₹ Cr) =
+DIVIDE ( SUM ( Project[lost_revenue_inr] ), 1e7 )
+
+Flagged Months =
+COUNTROWS ( FILTER ( 'Month Diagnostics', 'Month Diagnostics'[month_flags] <> "" ) )
+
+Projects With Root-Cause Flag =
+COUNTROWS ( FILTER ( Project, Project[suspected_root_cause] <> "" ) )
+
+
+// ---------------------------------------------------------------------
+// Display folder: 7 Scores
+// Percentile rank among the regions currently selected:
+//   share of OTHER regions with a strictly lower value (0 = worst, 1 = best).
+// Robust to outliers and unit-free, so components with different units
+// (%, kWh/m², t/₹ Cr) can be combined. Identical to the Python reference.
+// ---------------------------------------------------------------------
+
+Solar Resource (GHI) =
+VAR Op =
+    FILTER ( Project, Project[project_status] = "Operational" )
+RETURN
+    DIVIDE (
+        SUMX ( Op, Project[annual_ghi_kwh_m2_day] * Project[capacity_mw] ),
+        SUMX ( Op, Project[capacity_mw] )
+    )
+
+// Weather-normalised performance trend: PR in the last vs the first fiscal
+// year that has data in the current selection.
+PR Trend % =
+VAR FYs =
+    SUMMARIZE ( Energy, 'Date'[FiscalYear] )
+VAR FirstFY = MINX ( FYs, 'Date'[FiscalYear] )
+VAR LastFY = MAXX ( FYs, 'Date'[FiscalYear] )
+VAR PRFirst = CALCULATE ( [Performance Ratio], 'Date'[FiscalYear] = FirstFY )
+VAR PRLast = CALCULATE ( [Performance Ratio], 'Date'[FiscalYear] = LastFY )
+RETURN
+    IF ( FirstFY <> LastFY, DIVIDE ( PRLast, PRFirst ) - 1 )
+
+Pctl ROI =
+VAR Cur = [ROI %]
+VAR Tbl = ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@v", [ROI %] )
+VAR N = COUNTROWS ( Tbl )
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && N > 1, DIVIDE ( COUNTROWS ( FILTER ( Tbl, [@v] < Cur ) ), N - 1 ) )
+
+Pctl EBITDA Margin =
+VAR Cur = [EBITDA Margin %]
+VAR Tbl = ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@v", [EBITDA Margin %] )
+VAR N = COUNTROWS ( Tbl )
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && N > 1, DIVIDE ( COUNTROWS ( FILTER ( Tbl, [@v] < Cur ) ), N - 1 ) )
+
+Pctl Capacity Factor =
+VAR Cur = [Capacity Factor]
+VAR Tbl = ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@v", [Capacity Factor] )
+VAR N = COUNTROWS ( Tbl )
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && N > 1, DIVIDE ( COUNTROWS ( FILTER ( Tbl, [@v] < Cur ) ), N - 1 ) )
+
+Pctl Solar Resource =
+VAR Cur = [Solar Resource (GHI)]
+VAR Tbl = ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@v", [Solar Resource (GHI)] )
+VAR N = COUNTROWS ( Tbl )
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && N > 1, DIVIDE ( COUNTROWS ( FILTER ( Tbl, [@v] < Cur ) ), N - 1 ) )
+
+Pctl PR Trend =
+VAR Cur = [PR Trend %]
+VAR Tbl = ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@v", [PR Trend %] )
+VAR N = COUNTROWS ( Tbl )
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && N > 1, DIVIDE ( COUNTROWS ( FILTER ( Tbl, [@v] < Cur ) ), N - 1 ) )
+
+Pctl CO2 per Cr =
+VAR Cur = [CO2 per ₹ Cr-Year (t)]
+VAR Tbl = ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@v", [CO2 per ₹ Cr-Year (t)] )
+VAR N = COUNTROWS ( Tbl )
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && N > 1, DIVIDE ( COUNTROWS ( FILTER ( Tbl, [@v] < Cur ) ), N - 1 ) )
+
+Pctl Availability =
+VAR Cur = [Availability]
+VAR Tbl = ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@v", [Availability] )
+VAR N = COUNTROWS ( Tbl )
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && N > 1, DIVIDE ( COUNTROWS ( FILTER ( Tbl, [@v] < Cur ) ), N - 1 ) )
+
+Pctl CO2 per MW =
+VAR Cur = [CO2 per MW-Year (t)]
+VAR Tbl = ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@v", [CO2 per MW-Year (t)] )
+VAR N = COUNTROWS ( Tbl )
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && N > 1, DIVIDE ( COUNTROWS ( FILTER ( Tbl, [@v] < Cur ) ), N - 1 ) )
+
+Pctl CO2 Total =
+VAR Cur = [CO2 Avoided (t)]
+VAR Tbl = ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@v", [CO2 Avoided (t)] )
+VAR N = COUNTROWS ( Tbl )
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && N > 1, DIVIDE ( COUNTROWS ( FILTER ( Tbl, [@v] < Cur ) ), N - 1 ) )
+
+Pctl RE Share =
+VAR Cur = [Renewable Share (Captive) %]
+VAR Tbl = ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@v", [Renewable Share (Captive) %] )
+VAR N = COUNTROWS ( Tbl )
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && N > 1, DIVIDE ( COUNTROWS ( FILTER ( Tbl, [@v] < Cur ) ), N - 1 ) )
+
+// What-if parameters (Modeling > New parameter > Numeric range, 0..50, step 5).
+// Defaults: ROI 25, Margin 10, CF 10, Resource 15, PR trend 10, CO2/₹Cr 10, Availability 20.
+W ROI Value          = SELECTEDVALUE ( 'W ROI'[W ROI], 25 )
+W Margin Value       = SELECTEDVALUE ( 'W Margin'[W Margin], 10 )
+W CF Value           = SELECTEDVALUE ( 'W CF'[W CF], 10 )
+W Resource Value     = SELECTEDVALUE ( 'W Resource'[W Resource], 15 )
+W PR Trend Value     = SELECTEDVALUE ( 'W PR Trend'[W PR Trend], 10 )
+W CO2 Value          = SELECTEDVALUE ( 'W CO2'[W CO2], 10 )
+W Availability Value = SELECTEDVALUE ( 'W Availability'[W Availability], 20 )
+
+// Analytical prioritisation framework, NOT a financial recommendation.
+// Weights are renormalised, so the sliders need not add up to 100.
+Investment Priority Score =
+VAR TotalW =
+    [W ROI Value] + [W Margin Value] + [W CF Value] + [W Resource Value]
+        + [W PR Trend Value] + [W CO2 Value] + [W Availability Value]
+VAR Weighted =
+    [Pctl ROI] * [W ROI Value]
+        + [Pctl EBITDA Margin] * [W Margin Value]
+        + [Pctl Capacity Factor] * [W CF Value]
+        + [Pctl Solar Resource] * [W Resource Value]
+        + [Pctl PR Trend] * [W PR Trend Value]
+        + [Pctl CO2 per Cr] * [W CO2 Value]
+        + [Pctl Availability] * [W Availability Value]
+RETURN
+    IF ( HASONEVALUE ( Project[region] ) && TotalW > 0, 100 * DIVIDE ( Weighted, TotalW ) )
+// format: 0
+
+Investment Priority Rank =
+IF (
+    HASONEVALUE ( Project[region] ),
+    RANKX ( ALLSELECTED ( Project[region] ), [Investment Priority Score], , DESC, SKIP )
+)
+
+// Fixed, documented weights (powerbi/04_scoring_methodology.md).
+Sustainability Score =
+IF (
+    HASONEVALUE ( Project[region] ),
+    100 * ( 0.35 * [Pctl CO2 per Cr] + 0.25 * [Pctl CO2 per MW] + 0.25 * [Pctl CO2 Total] + 0.15 * [Pctl RE Share] )
+)
+
+
+// ---------------------------------------------------------------------
+// Display folder: 8 Narrative & Formatting
+// ---------------------------------------------------------------------
+
+// Executive headline that updates with slicers.
+Headline Volume vs Return =
+VAR Regions =
+    ADDCOLUMNS ( ALLSELECTED ( Project[region] ), "@e", [Total Energy (MWh)], "@r", [ROI %] )
+VAR TopEnergy = TOPN ( 1, Regions, [@e], DESC )
+VAR TopROI = TOPN ( 1, Regions, [@r], DESC )
+VAR EnergyLeader = MAXX ( TopEnergy, Project[region] )
+VAR RoiLeader = MAXX ( TopROI, Project[region] )
+VAR LeaderShare = DIVIDE ( MAXX ( TopEnergy, [@e] ), SUMX ( Regions, [@e] ) )
+VAR LeaderRoiRank = COUNTROWS ( FILTER ( Regions, [@r] > MAXX ( TopEnergy, [@r] ) ) ) + 1
+RETURN
+    IF (
+        EnergyLeader = RoiLeader,
+        EnergyLeader & " leads on both volume and return.",
+        EnergyLeader & " generates " & FORMAT ( LeaderShare, "0%" ) & " of energy but ranks #"
+            & LeaderRoiRank & " on ROI; " & RoiLeader & " earns the highest return."
+    )
+
+// Conditional formatting: colour ROI vs portfolio (field value -> font colour)
+ROI vs Portfolio Colour =
+VAR Portfolio = CALCULATE ( [ROI %], ALLSELECTED ( Project ) )
+RETURN
+    SWITCH ( TRUE (), ISBLANK ( [ROI %] ), BLANK (), [ROI %] >= Portfolio, "#2a78d6", "#eb6834" )
+
+
+// =====================================================================
+// CALCULATED COLUMN on Project (static by design: full window, ignores slicers)
+// Used as the legend of the Page 3 quadrant scatter. A measure cannot be a
+// legend; a column can. The thresholds are documented on the page.
+// =====================================================================
+
+// Investment Quadrant =
+// VAR ThisROI = CALCULATE ( [ROI %] )                                   -- context transition
+// VAR MedianInvestment =
+//     MEDIANX ( FILTER ( ALL ( Project ), Project[project_status] = "Operational" ), Project[investment_amount_inr] )
+// VAR PortfolioROI = CALCULATE ( [ROI %], ALL ( Project ) )
+// RETURN
+//     IF (
+//         Project[project_status] <> "Operational",
+//         "Pipeline (no ROI yet)",
+//         IF ( Project[investment_amount_inr] >= MedianInvestment, "High Investment", "Low Investment" )
+//             & " / " & IF ( ThisROI >= PortfolioROI, "High ROI", "Low ROI" )
+//     )
+
+
+// ---------------------------------------------------------------------
+// Display folder: 3 Financial (page-specific helpers)
+// ---------------------------------------------------------------------
+
+Capex per MW (₹ Cr) =
+DIVIDE (
+    CALCULATE ( SUM ( Project[investment_amount_inr] ), Project[project_status] = "Operational" ),
+    CALCULATE ( SUM ( Project[capacity_mw] ), Project[project_status] = "Operational" )
+) / 1e7
+
+Median Project ROI % =
+MEDIANX (
+    FILTER ( VALUES ( Project[project_id] ), NOT ISBLANK ( [ROI %] ) ),
+    [ROI %]
+)
+
+// Waterfall (Page 3). Disconnected table created with Enter data:
+//   'P&L Step'[Step] / [Order]:
+//   Revenue 1 | Operating cost 2 | Maintenance 3 | Depreciation 4 | EBIT 5
+// Waterfall visual: Category = 'P&L Step'[Step] (sorted by [Order]), Y = [P&L Step Value].
+// Mark "EBIT" as a total in Format > Columns.
+P&L Step Value (₹ Cr) =
+VAR StepName = SELECTEDVALUE ( 'P&L Step'[Step] )
+RETURN
+    DIVIDE (
+        SWITCH (
+            StepName,
+            "Revenue", [Revenue],
+            "Operating cost", - [Operating Cost],
+            "Maintenance", - [Maintenance Cost],
+            "Depreciation", - [Depreciation],
+            "EBIT", [EBIT]
+        ),
+        1e7
+    )

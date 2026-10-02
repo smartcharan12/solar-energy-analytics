@@ -1,0 +1,30 @@
+location_code,country,state,region,city,latitude,longitude,annual_ghi_kwh_m2_day,solar_zone
+L001,India,Rajasthan,North,Jaisalmer,26.92,70.91,5.95,Zone A - Excellent
+L002,India,Rajasthan,North,  jodhpur ,26.24,73.02,5.85,Zone A - Excellent
+L003,India,Rajasthan,North,Bikaner,28.02,73.31,5.75,Zone A - Excellent
+L004,India,Haryana,North,Hisar,29.15,75.72,5.3,Zone C - Good
+L005,India,Punjab,North,Bathinda,30.21,74.95,5.2,Zone C - Good
+L006,India,Uttar Pradesh,North,Jhansi,25.45,78.57,5.3,Zone C - Good
+L007,India,Gujarat,West,Bhuj,23.24,69.67,5.8,Zone A - Excellent
+L008,India,Gujarat,West,Palanpur,24.17,72.43,5.65,Zone B - Very Good
+L009,India,Gujarat,West,Ahmedabad,23.02,72.57,5.55,Zone B - Very Good
+L010,India,Maharashtra,West,Pune,18.52,73.86,5.4,Zone B - Very Good
+L011,India,Maharashtra,West,Solapur,17.66,75.91,5.6,Zone B - Very Good
+L012,India,Karnataka,South,Pavagada,14.1,77.28,5.75,Zone A - Excellent
+L013,India,Karnataka,South,BENGALURU,12.97,77.59,5.3,Zone C - Good
+L014,India,Andhra Pradesh,South,Anantapur,14.68,77.6,5.7,Zone A - Excellent
+L015,India,Andhra Pradesh,South,Kurnool,15.83,78.04,5.6,Zone B - Very Good
+L016,India,Telangana,South,Mahbubnagar,16.74,78.0,5.5,Zone B - Very Good
+L017,India,Tamil Nadu,South,Tirunelveli,8.71,77.76,5.4,Zone B - Very Good
+L018,India,Tamilnadu,South,Coimbatore,11.02,76.96,5.3,Zone C - Good
+L019,India,Kerala,South,Kochi,9.93,76.27,4.9,Zone D - Moderate
+L020,India,Madhya Pradesh,Central,Rewa,24.53,81.3,5.25,Zone C - Good
+L021,India,Madhya Pradesh,Central,Neemuch,24.47,74.87,5.6,Zone B - Very Good
+L022,India,Madhya Pradesh,Central,Khandwa,21.82,76.35,5.45,Zone B - Very Good
+L023,India,Chhattisgarh,Central,Raipur,21.25,81.63,5.0,Zone C - Good
+L024,India,Odisha,East,Bhubaneswar,20.3,85.82,4.9,Zone D - Moderate
+L025,India,West Bengal,East,Kolkata,22.57,88.36,4.6,Zone D - Moderate
+L026,India,Bihar,East,Patna,25.59,85.14,4.8,Zone D - Moderate
+L027,India,Assam,North-East,Guwahati,26.14,91.74,4.3,Zone D - Moderate
+L028,India,Tripura,North-East,Agartala,23.83,91.28,4.4,Zone D - Moderate
+L021,India,Madhya Pradesh,Central,Neemuch,24.47,74.87,5.6,Zone B - Very Good

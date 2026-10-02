@@ -1,0 +1,68 @@
+file,record,defect
+raw_locations,L002,city whitespace/case
+raw_locations,L013,city upper case
+raw_locations,L018,state spelling variant
+raw_locations,L021,exact duplicate row
+raw_projects,P010,"stale duplicate (older record_updated_at, old capacity)"
+raw_projects,P014,project_type case/whitespace
+raw_projects,P030,location_code format 'l-19'
+raw_projects,P022,negative investment (sign error)
+raw_projects,P_TEST,test record with no location
+raw_energy_generation,P010|2025-10-01,negative energy (sign error)
+raw_energy_generation,P013|2023-08-01,negative energy (sign error)
+raw_energy_generation,P018|2025-04-01,negative energy (sign error)
+raw_energy_generation,P048|2024-05-01,negative energy (sign error)
+raw_energy_generation,P053|2024-10-01,negative energy (sign error)
+raw_energy_generation,P012|2025-09-01,negative energy (sign error)
+raw_energy_generation,P002|2025-12-01,capacity_factor in percent
+raw_energy_generation,P018|2024-11-01,capacity_factor in percent
+raw_energy_generation,P035|2025-10-01,capacity_factor in percent
+raw_energy_generation,P044|2026-02-01,capacity_factor in percent
+raw_energy_generation,P016|2025-05-01,capacity_factor in percent
+raw_energy_generation,P045|2025-09-01,meter spike x10
+raw_energy_generation,P043|2025-07-01,meter spike x10
+raw_energy_generation,P047|2025-06-01,meter spike x10
+raw_energy_generation,P037|2024-05-01,meter spike x10
+raw_energy_generation,P021|2023-10-01,energy NULL
+raw_energy_generation,P032|2023-12-01,energy NULL
+raw_energy_generation,P034|2025-01-01,energy NULL
+raw_energy_generation,P037|2025-11-01,energy NULL
+raw_energy_generation,P045|2025-04-01,invalid date string
+raw_energy_generation,P042|2026-03-01,invalid date string
+raw_energy_generation,P044|2025-08-01,invalid date string
+raw_energy_generation,P024|2024-10-01,date in DD-MM-YYYY
+raw_energy_generation,P009|2024-03-01,date in DD-MM-YYYY
+raw_energy_generation,P002|2025-08-01,date in DD-MM-YYYY
+raw_energy_generation,P026|2023-05-01,date in DD-MM-YYYY
+raw_energy_generation,P002|2024-08-01,date in DD-MM-YYYY
+raw_energy_generation,P028|2025-05-01,date in DD-MM-YYYY
+raw_energy_generation,P009|2025-02-01,date in DD-MM-YYYY
+raw_energy_generation,P023|2024-02-01,date in DD-MM-YYYY
+raw_energy_generation,P009|2025-11-01,weather sensor NULL
+raw_energy_generation,P048|2023-07-01,weather sensor NULL
+raw_energy_generation,P999,orphan project_code
+raw_energy_generation,P999,orphan project_code
+raw_energy_generation,P0611,orphan project_code
+raw_energy_generation,P059|2023-06-01,exact duplicate
+raw_energy_generation,P005|2024-09-01,exact duplicate
+raw_energy_generation,P050|2026-01-01,exact duplicate
+raw_energy_generation,P022|2025-07-01,exact duplicate
+raw_energy_generation,P004|2024-05-01,exact duplicate
+raw_energy_generation,P016|2025-01-01,exact duplicate
+raw_energy_generation,P031|2023-11-01,exact duplicate
+raw_energy_generation,P032|2024-05-01,exact duplicate
+raw_energy_generation,P023|2024-08-01,exact duplicate
+raw_energy_generation,P045|2024-08-01,exact duplicate
+raw_energy_generation,P015|2024-12-01,exact duplicate
+raw_energy_generation,P023|2025-11-01,exact duplicate
+raw_financials,P016|2024-01-01,maintenance_cost NULL
+raw_financials,P019|2025-05-01,maintenance_cost NULL
+raw_financials,P048|2023-10-01,maintenance_cost NULL
+raw_financials,P011|2023-08-01,negative operating cost (sign error)
+raw_financials,P045|2025-04-01,negative operating cost (sign error)
+raw_financials,P060|2024-06-01,exact duplicate
+raw_financials,P004|2026-03-01,exact duplicate
+raw_financials,P055|2024-09-01,exact duplicate
+raw_financials,P024|2024-10-01,exact duplicate
+raw_financials,P049|2024-08-01,exact duplicate
+raw_financials,P008|2026-02-01,exact duplicate

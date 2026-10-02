@@ -1,0 +1,63 @@
+project_code,project_name,location_code,project_type,installation_date,capacity_mw,investment_amount_inr,ppa_tariff_inr_per_kwh,project_status,record_updated_at
+P001,Jaisalmer Solar Park I,L001,Utility-Scale,2017-07-12,170.0,6663050000.0,2.56,Operational,2026-04-10 09:00:00
+P002,Jaisalmer Solar Park II,L001,Utility-Scale,2021-04-10,30.0,1306600000.0,2.54,Operational,2026-04-10 09:00:00
+P003,Jaisalmer Solar Park III,L001,Utility-Scale,2026-08-31,175.0,6587100000.0,2.49,Under Construction,2026-04-10 09:00:00
+P004,Jodhpur Solar Park I,L002,Utility-Scale,2019-04-10,250.0,10054830000.0,2.55,Operational,2026-04-10 09:00:00
+P005,Jodhpur Solar Park II,L002,Utility-Scale,2022-06-10,75.0,2860210000.0,2.51,Operational,2026-04-10 09:00:00
+P006,Bikaner Solar Park I,L003,Utility-Scale,2017-05-23,195.0,7830870000.0,2.54,Operational,2026-04-10 09:00:00
+P007,Bikaner Solar Park II,L003,Utility-Scale,2024-12-30,60.0,2511210000.0,2.56,Operational,2026-04-10 09:00:00
+P008,Hisar Solar Park I,L004,Utility-Scale,2021-10-08,40.0,1636280000.0,2.62,Operational,2026-04-10 09:00:00
+P009,Hisar C&I Solar I,L004,C&I Open Access,2019-04-01,12.0,541180000.0,4.3,Operational,2026-04-10 09:00:00
+P010,Bathinda Solar Park I,L005,Utility-Scale,2022-12-05,55.0,2136880000.0,2.79,Operational,2026-04-10 09:00:00
+P011,Jhansi Solar Park I,L006,Utility-Scale,2019-01-09,40.0,1566220000.0,2.79,Operational,2026-04-10 09:00:00
+P012,Jhansi C&I Solar I,L006,C&I Open Access,2018-05-23,35.0,1526800000.0,4.37,Operational,2026-04-10 09:00:00
+P013,Bhuj Solar Park I,L007,Utility-Scale,2019-09-01,140.0,5398660000.0,2.72,Operational,2026-04-10 09:00:00
+P014,Bhuj Solar Park II,L007, utility-scale,2025-04-17,65.0,2498710000.0,2.69,Operational,2026-04-10 09:00:00
+P015,Palanpur Solar Park I,L008,Utility-Scale,2021-11-18,35.0,1383180000.0,2.55,Operational,2026-04-10 09:00:00
+P016,Ahmedabad C&I Solar I,L009,C&I Open Access,2021-10-27,35.0,1583080000.0,4.32,Operational,2026-04-10 09:00:00
+P017,Ahmedabad C&I Solar II,L009,C&I Open Access,2018-07-04,25.5,1132520000.0,3.81,Operational,2026-04-10 09:00:00
+P018,Ahmedabad Rooftop Portfolio I,L009,Rooftop,2017-09-14,3.5,174190000.0,4.88,Operational,2026-04-10 09:00:00
+P019,Pune Rooftop Portfolio I,L010,Rooftop,2017-07-22,3.9,199200000.0,4.86,Operational,2026-04-10 09:00:00
+P020,Pune Rooftop Portfolio II,L010,Rooftop,2024-09-20,1.9,87870000.0,4.72,Operational,2026-04-10 09:00:00
+P021,Pune C&I Solar I,L010,C&I Open Access,2017-03-19,14.5,630040000.0,4.63,Operational,2026-04-10 09:00:00
+P022,Solapur Solar Park I,L011,Utility-Scale,2018-06-08,30.0,-1198300000.0,2.72,Operational,2026-04-10 09:00:00
+P023,Solapur C&I Solar I,L011,C&I Open Access,2023-02-07,35.0,1551980000.0,4.58,Operational,2026-04-10 09:00:00
+P024,Pavagada Solar Park I,L012,Utility-Scale,2021-01-26,70.0,2874910000.0,2.67,Operational,2026-04-10 09:00:00
+P025,Pavagada Solar Park II,L012,Utility-Scale,2025-01-15,25.0,973710000.0,2.89,Operational,2026-04-10 09:00:00
+P026,Bengaluru Rooftop Portfolio I,L013,Rooftop,2019-10-31,1.2,60010000.0,4.38,Operational,2026-04-10 09:00:00
+P027,Bengaluru Rooftop Portfolio II,L013,Rooftop,2023-12-21,3.6,178450000.0,4.66,Operational,2026-04-10 09:00:00
+P028,Bengaluru C&I Solar I,L013,C&I Open Access,2018-11-06,33.5,1446220000.0,4.02,Operational,2026-04-10 09:00:00
+P029,Anantapur Solar Park I,L014,Utility-Scale,2020-01-13,35.0,1521870000.0,2.96,Operational,2026-04-10 09:00:00
+P030,Anantapur Solar Park II,l-19,Utility-Scale,2026-10-19,50.0,2092290000.0,2.91,Under Construction,2026-04-10 09:00:00
+P031,Kurnool Solar Park I,L015,Utility-Scale,2017-06-27,150.0,5887020000.0,2.71,Operational,2026-04-10 09:00:00
+P032,Kurnool C&I Solar I,L015,C&I Open Access,2023-08-22,45.5,1989930000.0,3.86,Operational,2026-04-10 09:00:00
+P033,Mahbubnagar Solar Park I,L016,Utility-Scale,2019-11-03,55.0,2194290000.0,2.67,Operational,2026-04-10 09:00:00
+P034,Mahbubnagar C&I Solar I,L016,C&I Open Access,2022-04-01,39.0,1767350000.0,4.05,Operational,2026-04-10 09:00:00
+P035,Tirunelveli Solar Park I,L017,Utility-Scale,2020-11-07,120.0,4790460000.0,2.86,Operational,2026-04-10 09:00:00
+P036,Tirunelveli Solar Park II,L017,Utility-Scale,2017-07-08,70.0,2604560000.0,2.8,Operational,2026-04-10 09:00:00
+P037,Coimbatore C&I Solar I,L018,C&I Open Access,2018-01-27,20.0,837340000.0,4.03,Operational,2026-04-10 09:00:00
+P038,Coimbatore Rooftop Portfolio I,L018,Rooftop,2024-10-14,1.3,69420000.0,4.9,Operational,2026-04-10 09:00:00
+P039,Kochi Floating Solar I,L019,Floating,2017-12-05,40.0,3127090000.0,3.26,Operational,2026-04-10 09:00:00
+P040,Kochi Rooftop Portfolio I,L019,Rooftop,2022-11-15,2.7,141110000.0,4.3,Operational,2026-04-10 09:00:00
+P041,Rewa Solar Park I,L020,Utility-Scale,2017-12-27,85.0,3353550000.0,2.98,Operational,2026-04-10 09:00:00
+P042,Rewa Solar Park II,L020,Utility-Scale,2024-09-30,80.0,3066790000.0,2.73,Operational,2026-04-10 09:00:00
+P043,Neemuch Solar Park I,L021,Utility-Scale,2019-03-25,90.0,3527510000.0,2.61,Operational,2026-04-10 09:00:00
+P044,Neemuch C&I Solar I,L021,C&I Open Access,2025-05-05,45.5,1903790000.0,4.14,Operational,2026-04-10 09:00:00
+P045,Khandwa Floating Solar I,L022,Floating,2018-06-30,20.0,1214110000.0,3.35,Operational,2026-04-10 09:00:00
+P046,Khandwa Floating Solar II,L022,Floating,2026-10-09,75.0,4603540000.0,3.29,Under Construction,2026-04-10 09:00:00
+P047,Raipur C&I Solar I,L023,C&I Open Access,2017-11-13,46.0,1949540000.0,3.73,Operational,2026-04-10 09:00:00
+P048,Raipur Rooftop Portfolio I,L023,Rooftop,2020-05-26,2.2,115800000.0,5.17,Operational,2026-04-10 09:00:00
+P049,Bhubaneswar C&I Solar I,L024,C&I Open Access,2020-10-23,19.5,956540000.0,3.93,Operational,2026-04-10 09:00:00
+P050,Bhubaneswar Rooftop Portfolio I,L024,Rooftop,2020-02-27,1.7,95480000.0,4.4,Operational,2026-04-10 09:00:00
+P051,Kolkata Rooftop Portfolio I,L025,Rooftop,2017-12-05,0.7,36370000.0,5.39,Operational,2026-04-10 09:00:00
+P052,Kolkata Rooftop Portfolio II,L025,Rooftop,2025-06-30,3.9,217550000.0,5.27,Operational,2026-04-10 09:00:00
+P053,Kolkata C&I Solar I,L025,C&I Open Access,2019-01-21,28.5,1283650000.0,4.32,Operational,2026-04-10 09:00:00
+P054,Patna C&I Solar I,L026,C&I Open Access,2021-01-20,22.0,960190000.0,4.3,Operational,2026-04-10 09:00:00
+P055,Patna Rooftop Portfolio I,L026,Rooftop,2017-03-13,1.7,95490000.0,4.49,Operational,2026-04-10 09:00:00
+P056,Guwahati Rooftop Portfolio I,L027,Rooftop,2017-10-02,4.2,222150000.0,4.42,Operational,2026-04-10 09:00:00
+P057,Guwahati C&I Solar I,L027,C&I Open Access,2018-09-20,32.0,1657510000.0,3.86,Operational,2026-04-10 09:00:00
+P058,Guwahati Solar Park I,L027,Utility-Scale,2026-07-16,40.0,1950300000.0,3.33,Under Construction,2026-04-10 09:00:00
+P059,Agartala Rooftop Portfolio I,L028,Rooftop,2018-09-17,1.1,56810000.0,4.48,Operational,2026-04-10 09:00:00
+P060,Agartala Solar Park I,L028,Utility-Scale,2023-09-21,40.0,1752290000.0,3.33,Operational,2026-04-10 09:00:00
+P010,Bathinda Solar Park I,L005,Utility-Scale,2022-12-05,44.0,1709500000.0,2.79,Operational,2024-11-02 17:45:00
+P_TEST,TEST - do not use,,Rooftop,2025-01-01,0.0,0.0,0.0,Operational,2025-01-01 00:00:00
